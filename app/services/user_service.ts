@@ -42,7 +42,7 @@ export default class UserService {
   async getUserWallet(phoneNumber: string): Promise<Wallet | null> {
     const user = await User.findBy('phone_number', phoneNumber)
     if (!user) {
-      return  null
+      return null
     }
     const userWallet = await user?.related('wallet').query().first()
     if (!userWallet) {
@@ -255,18 +255,28 @@ export default class UserService {
     } else {
       const response = request.text.split('*')
       const securityQuestions = JSON.parse(user.securityQuestions)
-      const randomPosition = Math.floor(Math.random() * securityQuestions.length)
+      let randomPosition =0
       if (response.length === 1) {
+        // check if random question position has been set
         let selectedQuestion = await redis.get(`selectedQuestion-${request.phoneNumber}`)
+
         if (!selectedQuestion) {
+          randomPosition= Math.floor(Math.random() * securityQuestions.length)
           selectedQuestion = await redis.set(
             `selectedQuestion-${request.phoneNumber}`,
             randomPosition
           )
+          const question = securityQuestions[randomPosition]
+          this.response = `CON You Need to answer your security questions to unlock your account.\n${question.question}`
+          return this.response
+        } else {
+          randomPosition = parseInt(selectedQuestion)
+          const question = securityQuestions[randomPosition]
+          this.response = `CON You Need to answer your security questions to unlock your account.\n${question.question}`
+          return this.response
         }
-        const question = securityQuestions[selectedQuestion]
-        this.response = `CON You Need to answer your security questions to unlock your account.\n${question.question}`
-        return this.response
+
+      
       }
       if (response.length === 2) {
         let selectedQuestion = await redis.get(`selectedQuestion-${request.phoneNumber}`)
