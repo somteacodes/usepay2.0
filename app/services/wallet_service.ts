@@ -8,6 +8,8 @@ import { MENURESPONSE, WALLETRESPONSE, WALLETTOKEN } from '../utils/constants.js
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 import { containsOnlyNumbers } from '../utils/validator.js'
+import Transaction from '#models/transaction'
+import Voucher from '#models/voucher'
 export default class WalletService {
   response: string
   userService: UserService
@@ -44,7 +46,7 @@ export default class WalletService {
     }
     if (userInput.length === 3 || userInput.length === 4) {
       // START AUTHENTICATION PROCESS
-      
+
       const loginResponse = await this.userService.loginUser({
         pin: userInput[3],
         phoneNumber: request.phoneNumber,
@@ -87,7 +89,7 @@ export default class WalletService {
       this.response = 'END You do not have a wallet\n. Please register to create one.'
       return this.response
     }
-    
+
     const userInput = request.text.split('*')
     if (userInput.length === 1) {
       this.response = `CON Enter recipient's wallet ID`
@@ -106,11 +108,9 @@ export default class WalletService {
       this.response = 'CON Enter amount to transfer'
       return this.response
     }
-    if (userInput.length === 3|| userInput.length === 4) {
-  
-      // START AUTHENTICATION PROCESS      
-      const loginResponse = await this.userService.loginUser
-     ({
+    if (userInput.length === 3 || userInput.length === 4) {
+      // START AUTHENTICATION PROCESS
+      const loginResponse = await this.userService.loginUser({
         pin: userInput[3],
         phoneNumber: request.phoneNumber,
         sessionId: request.sessionId,
@@ -120,8 +120,22 @@ export default class WalletService {
         this.response = loginResponse
         return this.response
       } else {
-        // TODO start transfer via 
-        this.response = `END Your voucher token is ${this.generateVoucherToken()} valid for one transaction only and expires in 10 minutes.`
+        // TODO voucher generation
+        const voucherToken = this.generateVoucherToken()
+        const voucherReponse = await this.transferFundsWithVoucher(
+          user,
+          Number(userInput[2]),
+          userInput[1],
+          request.sessionId,
+          voucherToken
+        )
+        if (voucherReponse !== 'SUCCESS') {
+          this.response = voucherReponse
+          return this.response
+        } else {
+          this.response = `END Voucher of ${toCurrencyCase(Number(userInput[2]))} has been created successfully. Voucher code is ${voucherToken}`
+          return this.response
+        }
       }
     }
 
@@ -198,6 +212,14 @@ export default class WalletService {
     await wallet.save()
     return wallet
   }
+  /**
+   * Function to transfer funds between users
+   * @param user : User
+   * @param amount : number
+   * @param walletToken : string
+   * @param session : string
+   * @returns : Promise<string>
+   */
   async transferFundsBetweenUsers(
     user: User,
     amount: number,
@@ -214,6 +236,7 @@ export default class WalletService {
     const receiver = await receiverWallet?.related('user').query().first()
     const transactionRef = nanoid(10)
     let transactionComplete = false
+
     // 1. Begin database transaction
     try {
       await db.transaction(async (trx) => {
@@ -254,18 +277,67 @@ export default class WalletService {
           },
           { client: trx }
         )
-        // Transaction committed if code reaches here
-        console.log('Transaction successful')
-        transactionComplete = true
-        return 'SUCCESS'
       })
+      // Transaction committed if code reaches here
+      console.log('Transaction successful')
+      transactionComplete = true
+      return 'SUCCESS'
     } catch (error) {
       // Transaction rolled back if any query throws an error
       console.error('Transaction failed:', error)
       return 'END Transaction failed with errors. Please try again.'
     }
+  }
 
-    return transactionComplete ? 'SUCCESS' : 'END Transaction failed. Please try again.'
+  async transferFundsWithVoucher(
+    user: User,
+    amount: number,
+    walletToken: string,
+    session: string,
+    voucherToken: string
+  ): Promise<string> {
+    // 0 check if user has enough balance
+    const userWallet = await user.related('wallet').query().first()
+    if ((userWallet?.balance || 0) < amount) {
+      return 'END Insufficient funds. Please try again.'
+    }
+    const receiverWalletToken = await WalletToken.findBy('token', walletToken)
+    const receiverWallet = await receiverWalletToken?.related('wallet').query().first()
+    const receiver = await receiverWallet?.related('user').query().first()
+    const transactionRef = nanoid(10)
+    let transactionComplete = false
+
+    try {
+      await db.transaction(async (trx) => {
+        userWallet?.useTransaction(trx)
+        userWallet!.balance = Number(userWallet!.balance) - amount
+        await userWallet?.save()
+        const voucherRecord = new Voucher()
+        voucherRecord.amount = amount
+        voucherRecord.ownerId = user.id
+        voucherRecord.receiverId = receiver!.id
+        voucherRecord.status = 'CREATED'
+        voucherRecord.voucher = voucherToken
+        voucherRecord.useTransaction(trx)
+        await voucherRecord.save()
+        // 3. Add transaction record for sender (within transaction)
+        await voucherRecord.related('transaction').create({
+          amount,
+          ref: transactionRef,
+          session,
+          type: 'VOUCHER',
+          status: 'DEBIT',
+          ownerId: user.id,
+          receiverId: receiver?.id,
+        })
+      })
+      console.log('Transaction successful')
+      transactionComplete = true
+      return 'SUCCESS'
+    } catch (error) {
+      console.error('Voucher creation failed:', error)
+      return 'END Voucher creation failed with errors. Please try again.'
+    }
   }
   async validateWalletToken(token: string, user: User): Promise<string> {
     const walletToken = await WalletToken.findBy('token', token)
