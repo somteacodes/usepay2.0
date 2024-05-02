@@ -7,8 +7,6 @@ import { toCurrencyCase } from '../utils/common.js'
 import { MENURESPONSE, VOUCHER, WALLETRESPONSE, WALLETTOKEN } from '../utils/constants.js'
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
-import { containsOnlyNumbers } from '../utils/validator.js'
-import Transaction from '#models/transaction'
 import Voucher from '#models/voucher'
 export default class WalletService {
   response: string
@@ -280,7 +278,7 @@ export default class WalletService {
     const receiverWallet = await receiverWalletToken?.related('wallet').query().first()
     const receiver = await receiverWallet?.related('user').query().first()
     const transactionRef = nanoid(10)
-    let transactionComplete = false
+     
 
     // 1. Begin database transaction
     try {
@@ -322,7 +320,6 @@ export default class WalletService {
       })
       // Transaction committed if code reaches here
       console.log('Transaction successful')
-      transactionComplete = true
       return 'SUCCESS'
     } catch (error) {
       // Transaction rolled back if any query throws an error
@@ -347,7 +344,7 @@ export default class WalletService {
     const receiverWallet = await receiverWalletToken?.related('wallet').query().first()
     const receiver = await receiverWallet?.related('user').query().first()
     const transactionRef = nanoid(10)
-    let transactionComplete = false
+
 
     try {
       await db.transaction(async (trx) => {
@@ -374,7 +371,7 @@ export default class WalletService {
         })
       })
       console.log('Transaction successful')
-      transactionComplete = true
+
       return 'SUCCESS'
     } catch (error) {
       console.error('Voucher creation failed:', error)
