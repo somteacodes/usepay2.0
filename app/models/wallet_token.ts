@@ -30,8 +30,8 @@ export default class WalletToken extends BaseModel {
   @belongsTo(() => Wallet)
   declare wallet: BelongsTo<typeof Wallet>
 
-  @hasOne(() => Transaction)
-  declare transaction: HasOne<typeof Transaction>
+  // @hasOne(() => Transaction)
+  // declare transaction: HasOne<typeof Transaction>
 
   // hooks
 

@@ -21,11 +21,11 @@ export default class Transaction extends BaseModel {
   @column()
   declare receiverId: number
 
-  @column()
-  declare receiverWalletId: number
+  // @column()
+  // declare receiverWalletId: number
 
   @column()
-  declare tokenId: number
+  declare voucherId: number
 
   @column()
   declare ref: string

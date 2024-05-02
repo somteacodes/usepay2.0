@@ -1,10 +1,8 @@
-import Token from '#models/voucher'
+import Voucher from '#models/voucher'
 import { DateTime } from 'luxon'
 import {
   BaseModel,
   beforeCreate,
-  beforeSave,
-  beforeUpdate,
   column,
   hasMany,
   hasOne,
@@ -13,7 +11,6 @@ import type { HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import Wallet from '#models/wallet'
 import Transaction from '#models/transaction'
 import { init } from '@paralleldrive/cuid2'
-import hash from '@adonisjs/core/services/hash'
 
 export default class User extends BaseModel {
   @column({ isPrimary: true, serializeAs: null })
@@ -61,10 +58,10 @@ export default class User extends BaseModel {
   })
   declare transactions: HasMany<typeof Transaction>
 
-  @hasMany(() => Token, {
+  @hasMany(() => Voucher, {
     foreignKey: 'ownerId',
   })
-  declare tokens: HasMany<typeof Token>
+  declare vouchers: HasMany<typeof Voucher>
 
   // hooks
   @beforeCreate()

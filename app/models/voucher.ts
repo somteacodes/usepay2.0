@@ -23,8 +23,8 @@ export default class Voucher extends BaseModel {
   @column()
   declare status: 'CREATED' | 'USED'
 
-  @column()
-  declare transactionId: number
+  // @column()
+  // declare transactionId: number
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
