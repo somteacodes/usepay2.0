@@ -49,7 +49,14 @@ export default class UssdsController {
         })
          
       }
-      if (text.startsWith('5')) {
+      if (text.startsWith(USSDMENUOPTIONS.REDEEM_VOUCHER)) {
+        const walletService = new WalletService()
+        ussdResponse = await walletService.handleRedeemVoucher({
+          sessionId,
+          serviceCode,
+          phoneNumber,
+          text,
+        })
       }
       if (text.startsWith(USSDMENUOPTIONS.REGISTER)) {
         const userService = new UserService()

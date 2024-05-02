@@ -4,7 +4,7 @@ import WalletToken from '#models/wallet_token'
 import UserService from '#services/user_service'
 import { customAlphabet, nanoid } from 'nanoid'
 import { toCurrencyCase } from '../utils/common.js'
-import { MENURESPONSE, WALLETRESPONSE, WALLETTOKEN } from '../utils/constants.js'
+import { MENURESPONSE, VOUCHER, WALLETRESPONSE, WALLETTOKEN } from '../utils/constants.js'
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 import { containsOnlyNumbers } from '../utils/validator.js'
@@ -141,6 +141,51 @@ export default class WalletService {
 
     return this.response
   }
+
+  async handleRedeemVoucher(request: IUSSDRequest): Promise<string> {
+    const user = await User.findBy('phoneNumber', request.phoneNumber)
+
+    if (!user) {
+      this.response = 'END You are not registered, Register to continue.'
+      return this.response
+    }
+    const userWallet = await this.userService.getUserWallet(request.phoneNumber)
+    if (!userWallet) {
+      this.response = 'END You do not have a wallet\n. Please register to create one.'
+      return this.response
+    }
+    const userInput = request.text.split('*')
+    if (userInput.length == 1) {
+      this.response = `CON Enter the voucher code you want to redeem`
+      return this.response
+    }
+    if (userInput.length == 2) {
+      const voucher = await Voucher.findBy('voucher', userInput[1])
+      if (!voucher) {
+        this.response = `END Voucher does not exist. Please try again`
+        return this.response
+      } else if (voucher.status !== VOUCHER.CREATED) {
+        this.response = `END Voucher has been used. Please try again`
+        return this.response
+      } else if (voucher.receiverId !== user.id) {
+        this.response = `END You cannot redeem this voucher. Please try again`
+        return this.response
+      } else {
+        const voucherRemdeemResponse = await this.redeemFundsWithVoucher(
+          user,
+          request.sessionId,
+          userInput[1]
+        )
+        if (voucherRemdeemResponse !== 'SUCCESS') {
+          this.response = voucherRemdeemResponse
+          return this.response
+        } else {
+          this.response = `END Voucher of ${toCurrencyCase(Number(voucher.amount))} has been redeemed successfully.`
+        }
+      }
+    }
+    return this.response
+  }
   /**
    * Function to generate wallet token
    * @param request : IUSSDRequest
@@ -260,9 +305,6 @@ export default class WalletService {
         // 4. Credit receiver
         receiverWallet?.useTransaction(trx)
         receiverWallet!.balance = Number(receiverWallet!.balance) + amount
-        // receiverWallet!.$attributes.balance  = receiverWallet!.$attributes.balance + amount
-        console.log('adding to receiver wallet', receiverWallet!.$attributes.balance, amount)
-        console.log('receiver total amount should be', Number(receiverWallet!.balance) + amount)
         await receiverWallet?.save()
         // 6.5. Add transaction record for receiver (within transaction)
         await receiver?.related('transactions').create(
@@ -339,6 +381,39 @@ export default class WalletService {
       return 'END Voucher creation failed with errors. Please try again.'
     }
   }
+
+  async redeemFundsWithVoucher(user: User, session: string, voucherToken: string) {
+    const userWallet = await user.related('wallet').query().first()
+    const voucherRecord = await Voucher.findBy('voucher', voucherToken)
+    try {
+      await db.transaction(async (trx) => {
+        userWallet?.useTransaction(trx)
+        userWallet!.balance = Number(userWallet!.balance) + Number(voucherRecord?.amount)
+        await userWallet?.save()
+
+        voucherRecord!.useTransaction(trx)
+        voucherRecord!.status = VOUCHER.USED as keyof typeof VOUCHER
+        await voucherRecord!.save()
+        // 3. Add transaction record for sender (within transaction)
+        await voucherRecord!.related('transaction').create({
+          amount: Number(voucherRecord?.amount),
+          ref: nanoid(10),
+          session,
+          type: 'VOUCHER',
+          status: 'CREDIT',
+          ownerId: voucherRecord?.ownerId,
+          receiverId: user.id,
+        })
+      })
+      console.log('redemption successful')
+
+      return 'SUCCESS'
+    } catch (error) {
+      console.error('Voucher redemption failed:', error)
+      return 'END Voucher redemption failed with errors. Please try again.'
+    }
+  }
+
   async validateWalletToken(token: string, user: User): Promise<string> {
     const walletToken = await WalletToken.findBy('token', token)
     if (!walletToken) {

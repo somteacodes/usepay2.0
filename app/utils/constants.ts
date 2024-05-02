@@ -28,3 +28,8 @@ export const USSDMENUOPTIONS = {
   REGISTER: '6', //DONE
   UNBLOCK_ACCOUNT: '7', //DONE
 }
+
+export const VOUCHER={
+  CREATED:'CREATED',
+  USED:'USED',
+}
