@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, beforeSave, belongsTo, column, hasOne } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, beforeSave, belongsTo, column, hasOne } from '@adonisjs/lucid/orm'
 import Wallet from '#models/wallet'
 import Transaction from '#models/transaction'
 import type { BelongsTo, HasOne } from '@adonisjs/lucid/types/relations'
@@ -12,7 +12,7 @@ export default class WalletToken extends BaseModel {
   declare token: string
 
   @column()
-  declare status: 'EXPIRED' | 'USED' | 'CREATED'
+  declare status: 'CREATED' | 'USED'|'EXPIRED'
 
   @column()
   declare walletId: number
@@ -35,10 +35,14 @@ export default class WalletToken extends BaseModel {
 
   // hooks
 
-  @beforeSave()
+  @beforeCreate()
   static generateExpirationTime(WalletToken: WalletToken) {
     if (!WalletToken.expires_at) {
       WalletToken.expires_at = DateTime.now().plus({ minutes: 10 })
     }
+  }
+  @beforeCreate()
+  static async setWalletTokenStatus(WalletToken: WalletToken) {
+    WalletToken.status = 'CREATED'
   }
 }

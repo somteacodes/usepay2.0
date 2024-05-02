@@ -9,7 +9,7 @@ export default class extends BaseSchema {
       table.integer('owner_id').notNullable()
       table.integer('sender_id').notNullable()
       table.integer('receiver_id').notNullable()
-      table.integer('receiver_wallet_id')
+      // table.integer('receiver_wallet_id')
       table.integer('voucher_id')
       table.string('ref').notNullable()     
       table.decimal('amount',13,4).notNullable()

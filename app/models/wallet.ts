@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import WalletToken from '#models/wallet_token'
@@ -14,7 +14,7 @@ export default class Wallet extends BaseModel {
   declare balance: number
 
   @column()
-  declare status: string
+  declare status: 'ACTIVE'| 'INACTIVE'
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -28,4 +28,10 @@ export default class Wallet extends BaseModel {
 
   @hasMany(() => WalletToken)
   declare WalletTokens: HasMany<typeof WalletToken>
+
+  // hooks
+  @beforeCreate()
+  static async setWalletStatus(Wallet: Wallet) {
+    Wallet.status = 'ACTIVE'
+  }
 }

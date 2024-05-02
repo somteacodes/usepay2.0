@@ -31,6 +31,10 @@ export default class Transaction extends BaseModel {
   declare ref: string
 
   @column()
+  declare session: string
+
+
+  @column()
   declare amount: number
 
   @column()
@@ -51,23 +55,16 @@ export default class Transaction extends BaseModel {
   })
   declare owner: BelongsTo<typeof User>
 
-  @belongsTo(() => Wallet, {
-    foreignKey: 'receiverWalletId',
-  })
-  declare receiverWallet: BelongsTo<typeof Wallet>
+  // @belongsTo(() => Wallet, {
+  //   foreignKey: 'receiverWalletId',
+  // })
+  // declare receiverWallet: BelongsTo<typeof Wallet>
 
-  @belongsTo(() => WalletToken)
-  declare WalletToken: BelongsTo<typeof WalletToken>
+  // @belongsTo(() => WalletToken)
+  // declare walletToken: BelongsTo<typeof WalletToken>
 
   @belongsTo(() => Voucher)
   declare voucher: BelongsTo<typeof Voucher>
 
-  /**Hooks */
-  @beforeCreate()
-  static generateRef(transaction: Transaction) {
-    const createId = init({
-      length: 16,
-    })
-    transaction.ref = createId()
-  }
+  
 }
