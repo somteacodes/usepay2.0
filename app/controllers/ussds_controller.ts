@@ -1,20 +1,17 @@
-import UserService from '#services/user_service'
-import WalletService from '#services/wallet_service'
 import type { HttpContext } from '@adonisjs/core/http'
-import { USSDMENUOPTIONS } from '../utils/constants.js'
 import USSDService from '#services/ussd_service'
 
 export default class UssdsController {
   ussdService: USSDService
-  constructor(){
+  constructor() {
     this.ussdService = new USSDService()
   }
-  public async handleRequest({ request, response }: HttpContext) {
+  public async handleRequest({ request }: HttpContext):Promise<string> {
     // let ussdResponse: string = 'Something went wrong.\n Please try again later.\n'
     let { sessionId, serviceCode, phoneNumber, text = '' } = request.body()
     console.log(sessionId, serviceCode, phoneNumber, text)
     // TODO prevent user from dialing like *123*1*1#
-  
+
     return this.ussdService.handleUSSDRequests({ sessionId, serviceCode, phoneNumber, text })
     // if (!text) {
     //   ussdResponse = await this.mainMenu()
@@ -54,7 +51,7 @@ export default class UssdsController {
     //       phoneNumber,
     //       text,
     //     })
-         
+
     //   }
     //   if (text.startsWith(USSDMENUOPTIONS.REDEEM_VOUCHER)) {
     //     const walletService = new WalletService()
