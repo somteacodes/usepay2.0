@@ -234,14 +234,14 @@ export default class WalletService {
     return this.response
   }
 
-  generateWalletToken(): string {
+ private generateWalletToken(): string {
     const numbers = '0123456789'
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     const numberToken = customAlphabet(numbers, 8)
     const token = letters[Math.floor(Math.random() * letters.length)] + numberToken()
     return token
   }
-  generateVoucherToken(): string {
+  private generateVoucherToken(): string {
     const numbers = '0123456789'
     const numberToken = customAlphabet(numbers, 12)
     const token = numberToken()
@@ -263,7 +263,7 @@ export default class WalletService {
    * @param session : string
    * @returns : Promise<string>
    */
-  async transferFundsBetweenUsers(
+ private async transferFundsBetweenUsers(
     user: User,
     amount: number,
     walletToken: string,
@@ -328,7 +328,7 @@ export default class WalletService {
     }
   }
 
-  async transferFundsWithVoucher(
+  private async transferFundsWithVoucher(
     user: User,
     amount: number,
     walletToken: string,
@@ -379,7 +379,7 @@ export default class WalletService {
     }
   }
 
-  async redeemFundsWithVoucher(user: User, session: string, voucherToken: string) {
+ private async redeemFundsWithVoucher(user: User, session: string, voucherToken: string) {
     const userWallet = await user.related('wallet').query().first()
     const voucherRecord = await Voucher.findBy('voucher', voucherToken)
     try {
@@ -411,7 +411,7 @@ export default class WalletService {
     }
   }
 
-  async validateWalletToken(token: string, user: User): Promise<string> {
+ private async validateWalletToken(token: string, user: User): Promise<string> {
     const walletToken = await WalletToken.findBy('token', token)
     if (!walletToken) {
       return 'END Invalid token. Please try again.'
