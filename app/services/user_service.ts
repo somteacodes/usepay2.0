@@ -17,12 +17,14 @@ import { ACCOUNT, MENURESPONSE, USSDMENUOPTIONS } from '../utils/constants.js'
 export default class UserService {
   response: string
   questionService: QuestionService
+  walletService: WalletService
   uuid: string
 
   constructor() {
     // initialize the response string to be returned
     this.response = 'END Something went wrong.\n Please try again later.\n'
     this.questionService = new QuestionService()
+    this.walletService = new WalletService()
     this.uuid = nanoid(11)
   }
   /**
@@ -165,7 +167,7 @@ export default class UserService {
     return this.response
   }
 
-  async loginUser(request: ILoginUserDto) {
+  async loginUser(request: ILoginUserDto):Promise<string> {
     const user = await User.findBy('phoneNumber', request.phoneNumber)
     if (!user) {
       this.response = 'END You are not registered, Register to continue.'
@@ -255,13 +257,13 @@ export default class UserService {
     } else {
       const response = request.text.split('*')
       const securityQuestions = JSON.parse(user.securityQuestions)
-      let randomPosition =0
+      let randomPosition = 0
       if (response.length === 1) {
         // check if random question position has been set
         let selectedQuestion = await redis.get(`selectedQuestion-${request.phoneNumber}`)
 
         if (!selectedQuestion) {
-          randomPosition= Math.floor(Math.random() * securityQuestions.length)
+          randomPosition = Math.floor(Math.random() * securityQuestions.length)
           selectedQuestion = await redis.set(
             `selectedQuestion-${request.phoneNumber}`,
             randomPosition
@@ -275,8 +277,6 @@ export default class UserService {
           this.response = `CON You Need to answer your security questions to unlock your account.\n${question.question}`
           return this.response
         }
-
-      
       }
       if (response.length === 2) {
         let selectedQuestion = await redis.get(`selectedQuestion-${request.phoneNumber}`)
@@ -313,7 +313,7 @@ export default class UserService {
     }
     return JSON.stringify(charHashes)
   }
-  generateChallenge(wordLength: number) {
+  private generateChallenge(wordLength: number):number[] {
     const positions: number[] = []
     let attempts = 0
     while (positions.length < 3 && attempts < 10) {
@@ -327,12 +327,12 @@ export default class UserService {
     return positions
   }
 
-  changeNumberToPositionWord(number: number) {
+  private changeNumberToPositionWord(number: number) {
     const words = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth']
     return words[number]
   }
 
-  async createNewUser(userData: IUserDto) {
+  private async createNewUser(userData: IUserDto) {
     try {
       const user = new User()
       user.firstName = userData.firstName
@@ -342,8 +342,8 @@ export default class UserService {
       user.isAdministrator = userData.isAdministrator
       user.securityQuestions = userData.securityQuestions
       await user.save()
-      const walletService = new WalletService()
-      await walletService.createNewWallet(user, { balance: 0, status: 'active' })
+
+      await this.walletService.createNewWallet(user, { balance: 0, status: 'active' })
       return user
     } catch (error) {
       console.log(error)
