@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       table.increments('id')
       table.integer('wallet_id').notNullable().unsigned().references('wallets.id')
       table.string('token').notNullable()
-      table.enum('status', ['CREATED', 'USED']).notNullable().defaultTo('CREATED')
+      table.enum('status', ['CREATED', 'USED', 'EXPIRED']).notNullable().defaultTo('CREATED')
       table.timestamp('expires_at').notNullable()
       table.timestamp('created_at').defaultTo(this.now())
       table.timestamp('updated_at', { useTz: true }).notNullable().defaultTo(this.now())
