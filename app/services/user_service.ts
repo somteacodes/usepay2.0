@@ -167,7 +167,7 @@ export default class UserService {
     return this.response
   }
 
-  async loginUser(request: ILoginUserDto):Promise<string> {
+  async loginUser(request: ILoginUserDto): Promise<string> {
     const user = await User.findBy('phoneNumber', request.phoneNumber)
     if (!user) {
       this.response = 'END You are not registered, Register to continue.'
@@ -215,22 +215,15 @@ export default class UserService {
           parsedPassword[challengePositions[i]],
           request.pin[i]
         )
-        console.log({
-          position: challengePositions[i],
-          input: request.pin[i],
-          verified: verifiedChar,
-        })
         if (!verifiedChar) {
           // INCREMENT RETRIES
           if (retries) {
             await redis.set(`retries-${request.phoneNumber}`, parseInt(retries) + 1)
-            this.response = 'END Incorrect characters, try again.'
-            return this.response
           } else {
             await redis.set(`retries-${request.phoneNumber}`, 1)
-            this.response = 'END Incorrect characters, try again.'
-            return this.response
           }
+          this.response = 'END Incorrect characters, try again.'
+          return this.response
         } else {
           await redis.del(`retries-${request.phoneNumber}`)
           await redis.del(`position-${user.id}`)
@@ -313,7 +306,7 @@ export default class UserService {
     }
     return JSON.stringify(charHashes)
   }
-  private generateChallenge(wordLength: number):number[] {
+  private generateChallenge(wordLength: number): number[] {
     const positions: number[] = []
     let attempts = 0
     while (positions.length < 3 && attempts < 10) {
