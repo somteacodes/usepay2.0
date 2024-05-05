@@ -17,14 +17,14 @@ import { ACCOUNT, MENURESPONSE, USSDMENUOPTIONS } from '../utils/constants.js'
 export default class UserService {
   response: string
   questionService: QuestionService
-  walletService: WalletService
+ 
   uuid: string
 
   constructor() {
     // initialize the response string to be returned
     this.response = 'END Something went wrong.\n Please try again later.\n'
     this.questionService = new QuestionService()
-    this.walletService = new WalletService()
+  
     this.uuid = nanoid(11)
   }
   /**
@@ -175,7 +175,7 @@ export default class UserService {
     }
     // is User Blocked
     if (user.status === ACCOUNT.BLOCKED) {
-      this.response = `${MENURESPONSE.END} Your account has been blocked. Dial ${process.env.SERVICE_CODE?.slice(0, -1)}*${USSDMENUOPTIONS.UNBLOCK_ACCOUNT} to unblock it.`
+      this.response = `${MENURESPONSE.END} Your account has been blocked. Dial ${process.env.SERVICE_CODE} to unblock it.`
       return this.response
     }
     /*START PIN CHALLENGE VERIFICATION*/
@@ -336,7 +336,7 @@ export default class UserService {
       user.securityQuestions = userData.securityQuestions
       await user.save()
 
-      await this.walletService.createNewWallet(user, { balance: 0, status: 'active' })
+      await new WalletService().createNewWallet(user, { balance: 0, status: 'active' })
       return user
     } catch (error) {
       console.log(error)

@@ -8,6 +8,7 @@ import { MENURESPONSE, VOUCHER, WALLETRESPONSE, WALLETTOKEN } from '../utils/con
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 import Voucher from '#models/voucher'
+import { containsOnlyNumbers } from '../utils/validator.js'
 export default class WalletService {
   response: string
   userService: UserService
@@ -43,6 +44,15 @@ export default class WalletService {
       return this.response
     }
     if (userInput.length === 3 || userInput.length === 4) {
+      // validate amount
+      if(!containsOnlyNumbers(userInput[2])) {
+        this.response = 'END Invalid amount. Please try again.'
+        return this.response
+      }
+      if(Number(userInput[2]) >= 50000) {
+        this.response = 'END Maximum transfer amount is 50,000. Please try again.'
+        return this.response
+      }
       // START AUTHENTICATION PROCESS
 
       const loginResponse = await this.userService.loginUser({
@@ -420,7 +430,9 @@ export default class WalletService {
       DateTime.fromISO(walletToken.$attributes.expires_at) < DateTime.now()
     ) {
       walletToken.status = WALLETTOKEN.EXPIRED as keyof typeof WALLETTOKEN
+      console.log('walletToken', walletToken)
       await walletToken.save()
+      
       return 'END Wallet ID has been used or expired. Please ask for a new one.'
     } else if ((await user.related('wallet').query().first())?.id === walletToken.walletId) {
       return 'END You cannot tranfer funds to your wallet. Please try again.'
