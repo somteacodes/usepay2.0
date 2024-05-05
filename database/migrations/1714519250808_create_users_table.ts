@@ -14,7 +14,7 @@ export default class extends BaseSchema {
       table.boolean('is_administrator').defaultTo(false)
       table.text('password').notNullable()
       table.json('security_questions').notNullable()
-      table.string('status').defaultTo('ACTIVE')
+      table.enum('status', ['ACTIVE', 'BLOCKED','BANNED']).defaultTo('ACTIVE')
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').nullable()
     })
