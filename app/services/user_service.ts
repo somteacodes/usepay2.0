@@ -95,7 +95,7 @@ export default class UserService {
       if (!containsOnlyAlphabets(response[2])) {
         return 'END Invalid last name. Please try again.'
       }
-      return 'CON Create a PIN, must be 6 to 8 digits.'
+      return 'CON Create a PIN, must be 6 to 8 digits.\n Use something you can remember easily.\n As you will be asked to enter random characters of your pin to login.'
     }
     if (response.length === 4) {
       // validate pin
