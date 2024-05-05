@@ -1,5 +1,9 @@
 import router from '@adonisjs/core/services/router'
-const UsersController = () => import('#controllers/users_controller')
+import { middleware } from '#start/kernel'
 const USSDController = () => import('#controllers/ussds_controller')
 
-router.post('/', [USSDController, 'handleRequest'])
+router.post('/', [USSDController, 'handleRequest']).use(middleware.userAccountStatus())
+
+router.get('/', async ({ response }) => {
+  response.send('Welcome to USSD Gateway')
+})
