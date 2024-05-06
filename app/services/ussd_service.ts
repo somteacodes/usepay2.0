@@ -71,14 +71,7 @@ export default class USSDService {
           text,
         })
       }
-      if (text.startsWith(USSDMENUOPTIONS.UNBLOCK_ACCOUNT)) {
-        this.ussdResponse = await this.userService.unlockAccount({
-          sessionId,
-          serviceCode,
-          phoneNumber,
-          text,
-        })
-      }
+       
     }
 
     return this.ussdResponse
