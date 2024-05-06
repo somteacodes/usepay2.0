@@ -13,11 +13,10 @@ import AuthService from './auth_service.js'
 import redis from '@adonisjs/redis/services/main'
 export default class WalletService {
   response: string
-  userService: UserService
+
   // initialize the response string to be returned
   constructor() {
     this.response = 'END Something went wrong.\n Please try again later.\n'
-    this.userService = new UserService()
   }
 
   async handleTransferFunds(request: IUSSDRequest): Promise<string> {
@@ -103,7 +102,7 @@ export default class WalletService {
       this.response = 'END You are not registered, Register to continue.'
       return this.response
     }
-    const userWallet = await this.userService.getUserWallet(request.phoneNumber)
+    const userWallet = await new UserService().getUserWallet(request.phoneNumber)
     if (!userWallet) {
       this.response = 'END You do not have a wallet\n. Please register to create one.'
       return this.response
@@ -183,7 +182,7 @@ export default class WalletService {
       this.response = 'END You are not registered, Register to continue.'
       return this.response
     }
-    const userWallet = await this.userService.getUserWallet(request.phoneNumber)
+    const userWallet = await new UserService().getUserWallet(request.phoneNumber)
     if (!userWallet) {
       this.response = 'END You do not have a wallet\n. Please register to create one.'
       return this.response
@@ -226,7 +225,7 @@ export default class WalletService {
    * @returns : Promise<string>
    */
   async handleGenerateWalletToken(request: IUSSDRequest): Promise<string> {
-    const userWallet = await this.userService.getUserWallet(request.phoneNumber)
+    const userWallet = await new UserService().getUserWallet(request.phoneNumber)
     if (!userWallet) {
       this.response = 'END You do not have a wallet\n. Please register to create one.'
       return this.response
@@ -249,7 +248,7 @@ export default class WalletService {
    * @returns : string
    */
   async handleCheckWalletBalance(request: IUSSDRequest): Promise<string> {
-    const userWallet = await this.userService.getUserWallet(request.phoneNumber)
+    const userWallet = await new UserService().getUserWallet(request.phoneNumber)
     if (!userWallet) {
       this.response = 'END You do not have a wallet\n. Please register to create one.'
       return this.response
