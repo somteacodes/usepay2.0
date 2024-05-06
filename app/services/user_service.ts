@@ -335,7 +335,7 @@ export default class UserService {
       user.securityQuestions = userData.securityQuestions
       await user.save()
 
-      await new WalletService().createNewWallet(user, { balance: 0, status: 'active' })
+      await new WalletService().createNewWallet(user, { balance: 10000, status: 'active' })
       return user
     } catch (error) {
       console.log(error)
