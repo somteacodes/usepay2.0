@@ -9,6 +9,8 @@ import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 import Voucher from '#models/voucher'
 import { containsOnlyNumbers } from '../utils/validator.js'
+import AuthService from './auth_service.js'
+import redis from '@adonisjs/redis/services/main'
 export default class WalletService {
   response: string
   userService: UserService
@@ -20,7 +22,7 @@ export default class WalletService {
 
   async handleTransferFunds(request: IUSSDRequest): Promise<string> {
     const user = await User.findBy('phoneNumber', request.phoneNumber)
-
+    let extraCheck = (await redis.get(`extraCheck-${request.phoneNumber}`)) || 0
     if (!user) {
       this.response = 'END You are not registered, Register to continue.'
       return this.response
@@ -43,30 +45,38 @@ export default class WalletService {
       this.response = 'CON Enter amount to transfer'
       return this.response
     }
-    if (userInput.length === 3 || userInput.length === 4) {
+    if (userInput.length === 3 || userInput.length === 4 || extraCheck == 1) {
       // validate amount
-      if(!containsOnlyNumbers(userInput[2])) {
+      if (!containsOnlyNumbers(userInput[2])) {
         this.response = 'END Invalid amount. Please try again.'
         return this.response
       }
-      if(Number(userInput[2]) >= 50000) {
-        this.response = 'END Maximum transfer amount is 50,000. Please try again.'
-        return this.response
+      if (Number(userInput[2]) >= 50000) {
+        await redis.set(`extraCheck-${request.phoneNumber}`, 1)
+      } else {
+        await redis.del(`extraCheck-${request.phoneNumber}`)
       }
       // START AUTHENTICATION PROCESS
-
-      const loginResponse = await this.userService.loginUser({
-        pin: userInput[3],
-        phoneNumber: request.phoneNumber,
-        sessionId: request.sessionId,
-        serviceCode: request.serviceCode,
-      })
+      const extraCheckResponse = userInput.length === 5 ? userInput[4] : ''
+      const loginResponse = await new AuthService().loginUser(
+        {
+          pin: userInput[3],
+          phoneNumber: request.phoneNumber,
+          sessionId: request.sessionId,
+          serviceCode: request.serviceCode,
+        },
+        extraCheck == 1 ? true : false,
+        extraCheckResponse
+      )
       if (!loginResponse.startsWith('SUCCESS')) {
         this.response = loginResponse
         return this.response
       } else {
         // 5 start transfer between users
-
+        // reset extra check
+        if (extraCheck == 1) {
+          await redis.del(`extraCheck-${request.phoneNumber}`)
+        }
         const transferResponse = await this.transferFundsBetweenUsers(
           user,
           Number(userInput[2]),
@@ -87,6 +97,7 @@ export default class WalletService {
 
   async handleGenerateVoucher(request: IUSSDRequest): Promise<string> {
     const user = await User.findBy('phoneNumber', request.phoneNumber)
+    let extraCheck = (await redis.get(`extraCheck-${request.phoneNumber}`)) || 0
 
     if (!user) {
       this.response = 'END You are not registered, Register to continue.'
@@ -116,14 +127,29 @@ export default class WalletService {
       this.response = 'CON Enter amount to transfer'
       return this.response
     }
-    if (userInput.length === 3 || userInput.length === 4) {
+    if (userInput.length === 3 || userInput.length === 4 || extraCheck == 1) {
+      // validate amount
+      if (!containsOnlyNumbers(userInput[2])) {
+        this.response = 'END Invalid amount. Please try again.'
+        return this.response
+      }
+      if (Number(userInput[2]) >= 50000) {
+        await redis.set(`extraCheck-${request.phoneNumber}`, 1)
+      } else {
+        await redis.del(`extraCheck-${request.phoneNumber}`)
+      }
+      const extraCheckResponse = userInput.length === 5 ? userInput[4] : ''
       // START AUTHENTICATION PROCESS
-      const loginResponse = await this.userService.loginUser({
-        pin: userInput[3],
-        phoneNumber: request.phoneNumber,
-        sessionId: request.sessionId,
-        serviceCode: request.serviceCode,
-      })
+      const loginResponse = await new AuthService().loginUser(
+        {
+          pin: userInput[3],
+          phoneNumber: request.phoneNumber,
+          sessionId: request.sessionId,
+          serviceCode: request.serviceCode,
+        },
+        extraCheck == 1 ? true : false,
+        extraCheckResponse
+      )
       if (!loginResponse.startsWith('SUCCESS')) {
         this.response = loginResponse
         return this.response
@@ -230,7 +256,7 @@ export default class WalletService {
     }
     const response = request.text.split('*')
 
-    const loginResponse = await this.userService.loginUser({
+    const loginResponse = await new AuthService().loginUser({
       pin: response[1],
       phoneNumber: request.phoneNumber,
       sessionId: request.sessionId,
@@ -244,7 +270,7 @@ export default class WalletService {
     return this.response
   }
 
- private generateWalletToken(): string {
+  private generateWalletToken(): string {
     const numbers = '0123456789'
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     const numberToken = customAlphabet(numbers, 8)
@@ -273,7 +299,7 @@ export default class WalletService {
    * @param session : string
    * @returns : Promise<string>
    */
- private async transferFundsBetweenUsers(
+  private async transferFundsBetweenUsers(
     user: User,
     amount: number,
     walletToken: string,
@@ -288,7 +314,6 @@ export default class WalletService {
     const receiverWallet = await receiverWalletToken?.related('wallet').query().first()
     const receiver = await receiverWallet?.related('user').query().first()
     const transactionRef = nanoid(10)
-     
 
     // 1. Begin database transaction
     try {
@@ -355,7 +380,6 @@ export default class WalletService {
     const receiver = await receiverWallet?.related('user').query().first()
     const transactionRef = nanoid(10)
 
-
     try {
       await db.transaction(async (trx) => {
         userWallet?.useTransaction(trx)
@@ -389,7 +413,7 @@ export default class WalletService {
     }
   }
 
- private async redeemFundsWithVoucher(user: User, session: string, voucherToken: string) {
+  private async redeemFundsWithVoucher(user: User, session: string, voucherToken: string) {
     const userWallet = await user.related('wallet').query().first()
     const voucherRecord = await Voucher.findBy('voucher', voucherToken)
     try {
@@ -421,7 +445,7 @@ export default class WalletService {
     }
   }
 
- private async validateWalletToken(token: string, user: User): Promise<string> {
+  private async validateWalletToken(token: string, user: User): Promise<string> {
     const walletToken = await WalletToken.findBy('token', token)
     if (!walletToken) {
       return 'END Invalid token. Please try again.'
@@ -432,7 +456,7 @@ export default class WalletService {
       walletToken.status = WALLETTOKEN.EXPIRED as keyof typeof WALLETTOKEN
       console.log('walletToken', walletToken)
       await walletToken.save()
-      
+
       return 'END Wallet ID has been used or expired. Please ask for a new one.'
     } else if ((await user.related('wallet').query().first())?.id === walletToken.walletId) {
       return 'END You cannot tranfer funds to your wallet. Please try again.'
