@@ -1,3 +1,4 @@
+ 
 export const containsOnlyAlphabets = (str: string): boolean => {
   const regex = /^[A-Za-z]+$/
   return regex.test(str)
@@ -23,4 +24,10 @@ export const validatePINChallengeLength = (pin: string): boolean => {
   // check if pin is 3 digits
   const regex = /^[0-9]{3}$/
   return regex.test(pin)
+}
+
+
+export const containsOnlyAlphabetsAndNumbersAndSpaces = (str: string): boolean => {
+  const regex = /^[A-Za-z0-9\s]+$/
+  return regex.test(str)
 }

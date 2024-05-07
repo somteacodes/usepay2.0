@@ -351,7 +351,11 @@ export default class WalletService {
           },
           { client: trx }
         )
+        receiverWalletToken?.useTransaction(trx)
+        receiverWalletToken!.status = WALLETTOKEN.USED as keyof typeof WALLETTOKEN
+        await receiverWalletToken?.save()
       })
+   
       // Transaction committed if code reaches here
       console.log('Transaction successful')
       return 'SUCCESS'
