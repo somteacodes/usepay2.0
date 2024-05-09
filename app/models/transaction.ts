@@ -1,11 +1,9 @@
 
-import Wallet from '#models/wallet'
-import WalletToken from '#models/wallet_token'
+
 import User from '#models/user'
 import { DateTime } from 'luxon'
-import { BaseModel, beforeCreate, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel,  belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
-import { init } from '@paralleldrive/cuid2'
 import Voucher from '#models/voucher'
 
 export default class Transaction extends BaseModel {

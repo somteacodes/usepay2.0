@@ -1,7 +1,7 @@
 import { HttpContext } from '@adonisjs/core/http'
 
 export default class UsersController {
-  public async index({ request, response }: HttpContext) {
+  public async index({ request }: HttpContext) {
     let { sessionId, serviceCode, phoneNumber, text = '' } = request.body()
     
     return await this.createAccount({ sessionId, serviceCode, phoneNumber, text })
