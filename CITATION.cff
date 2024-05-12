@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: USSD Digital wallet with PIN authentication
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Somtochukwu
+    family-names: Anunobi
+    email: somteacodes@gmail.com
+repository-code: 'https://github.com/somteacodes/usepay2.0'
+abstract: >-
+  USSD Digital Wallet using Partial PIN authentication method and
+  unique wallet IDs as unique identifiers
+keywords:
+  - USSD
+  - Digital Wallet
+  - Payments
+  - Authentication
+  - Vouchers
+  - Shoulder Surfing Attack
+license: MIT
+commit: First release
+version: '1.0'
+date-released: '2024-05-10'
