@@ -7,3 +7,4 @@ router.post('/', [USSDController, 'handleRequest']).use(middleware.userAccountSt
 router.get('/', async ({ response }) => {
   response.send('Welcome to USSD Gateway')
 })
+

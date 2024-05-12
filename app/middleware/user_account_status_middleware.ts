@@ -15,7 +15,7 @@ export default class UserAccountStatusMiddleware {
     const { sessionId, serviceCode, phoneNumber, text = '' } = ctx.request.body()
     const isAccountBlocked = await this.authService.isAccountBlocked(phoneNumber)
     let menuResponse =
-      'END Account is blocked. You have to answer some security questions to unblock it.\n'
+      'CON Account is blocked. You have to answer some security questions to unblock it.\n'
     menuResponse += '1. Proceed\n'
     menuResponse += '2. Cancel\n'
     if (isAccountBlocked) {
