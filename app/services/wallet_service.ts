@@ -236,7 +236,7 @@ export default class WalletService {
       walletId: userWallet.id,
     })
     if (walletToken) {
-      this.response = `END Your wallet ID is ${token}, valid for one transaction only and expires in 23 hours`
+      this.response = `END Your wallet ID is ${token}, valid for one transaction only and expires in 30 minutes`
       return this.response
     }
 

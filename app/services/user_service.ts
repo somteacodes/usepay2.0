@@ -205,7 +205,7 @@ export default class UserService {
   //       user.status = ACCOUNT.BLOCKED as keyof typeof ACCOUNT
   //       await user.save()
   //       this.response =
-  //         'END You have exceeded the maximum number of retries.\n Your account has been locked.\n Unlock it by answeing your security questions.'
+  //         'END You have exceeded the maximum number of retries.\n Your account has been locked.\n Unlock it by answering your security questions.'
   //       return this.response
   //     }
 
